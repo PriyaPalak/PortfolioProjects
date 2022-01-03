@@ -1,4 +1,3 @@
-USE PortfolioProject3;
 
 /* 
 
@@ -6,19 +5,44 @@ Cleaning Data in SQL Queries
 
 */
 
+
+
+
+--Let's check what do we have in here
+
 SELECT *
 FROM NashvilleHousing;
 
--- Standardise Date Format
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+/*
+
+1) Standardise Date Format
+
+*/
+
+-- Adding a new column for SaleDate in Date format
 
 ALTER TABLE NashvilleHousing
 ADD SaleDateConverted Date;
 
+-- Filling the new column with relevant Data
+
 UPDATE NashvilleHousing
 SET SaleDateConverted = CONVERT(Date,SaleDate);
 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
--- Populate Property Address data
+/*
+
+2) Populate Property Address data
+
+*/
+
+-- Fetching relevant PropertAddresses where the column is null,using Self Join
+
 
 SELECT a.ParcelID,a.PropertyAddress,b.ParcelID,b.PropertyAddress,ISNULL(a.PropertyAddress,b.PropertyAddress)
 FROM NashvilleHousing a
@@ -27,6 +51,7 @@ ON a.ParcelID = b.ParcelID AND a.[UniqueID ] <> b.[UniqueID ]
 WHERE a.PropertyAddress IS NULL
 
 
+-- Filling the Null Rows with Relevant Values
 
 
 UPDATE a
@@ -36,10 +61,11 @@ JOIN NashvilleHousing b
 ON a.ParcelID = b.ParcelID AND a.[UniqueID ] <> b.[UniqueID ]
 WHERE a.PropertyAddress IS NULL
 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 /* 
 
-Breaking Out Address into Individual Columns (Address,City,State)
+3) Breaking Out Address into Individual Columns (Address,City,State)
 
 */
 
@@ -49,14 +75,18 @@ Breaking Out Address into Individual Columns (Address,City,State)
 SELECT PropertyAddress
 FROM NashvilleHousing;
 
+
 -- Specifying what do we want
+
 
 SELECT 
 SUBSTRING(PropertyAddress,1,CHARINDEX(',',PropertyAddress)-1) AS Address,
 SUBSTRING(PropertyAddress,CHARINDEX(',',PropertyAddress)+1,LEN(PropertyAddress)) AS City
 FROM NashvilleHousing
 
+
 -- Adding 2 new columns to the table
+
 
 ALTER TABLE NashvilleHousing
 ADD PropertyAddressNew NVARCHAR(255);
@@ -64,7 +94,9 @@ ADD PropertyAddressNew NVARCHAR(255);
 ALTER TABLE NashvilleHousing
 ADD PropertyCity NVARCHAR(255);
 
+
 -- Filling those 2 new columns with the relevant values
+
 
 UPDATE NashvilleHousing
 SET PropertyAddressNew = SUBSTRING(PropertyAddress,1,CHARINDEX(',',PropertyAddress)-1) FROM NashvilleHousing;
@@ -75,9 +107,12 @@ SET PropertyCity = SUBSTRING(PropertyAddress,CHARINDEX(',',PropertyAddress)+1,LE
 
 -- Splitting the OwnerAddress column now
 
+
 Select OwnerAddress from NashvilleHousing;
 
+
 -- Specifying what we want
+
 
 SELECT 
 PARSENAME(REPLACE(OwnerAddress,',','.'),3),
@@ -85,7 +120,9 @@ PARSENAME(REPLACE(OwnerAddress,',','.'),2),
 PARSENAME(REPLACE(OwnerAddress,',','.'),1)
 FROM NashvilleHousing;
 
+
 -- Adding 3 new columns 
+
 
 ALTER TABLE NashvilleHousing
 ADD OwnerAddressNew NVARCHAR(255);
@@ -99,6 +136,7 @@ ADD OwnerState NVARCHAR(255)
 
 -- Filling the 3 columns with relevant values
 
+
 UPDATE NashvilleHousing
 SET OwnerAddressNew = PARSENAME(REPLACE(OwnerAddress,',','.'),3);
 
@@ -108,12 +146,12 @@ SET OwnerCity = PARSENAME(REPLACE(OwnerAddress,',','.'),2);
 UPDATE NashvilleHousing
 SET OwnerState = PARSENAME(REPLACE(OwnerAddress,',','.'),1);
 
-SeleCt * from NashvilleHousing
 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 /* 
 
-Change Y and N to Yes and No in 'Sold as Vacant' field
+4) Change Y and N to Yes and No in 'Sold as Vacant' field
 
 */
 
@@ -125,7 +163,9 @@ Change Y and N to Yes and No in 'Sold as Vacant' field
 SELECT DISTINCT (SoldAsVacant)
 FROM NashvilleHousing
 
+
 -- Making relevant changes
+
 
 UPDATE NashvilleHousing
 SET SoldAsVacant = CASE WHEN SoldAsVacant = 'Y' THEN 'Yes'
@@ -141,8 +181,8 @@ Remove Duplicates
 
 */
 
-SELECT * 
-FROM NashvilleHousing; 
+-- Identifying duplicates using Row_Number function and CTE
+-- Deleting duplicates
 
 
 With RowNumcte AS
@@ -159,12 +199,13 @@ DELETE
 FROM RowNumcte
 WHERE Rownum>1
 
-
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 /*
 
 Delete Unused Columns
 
 */
+
 
 ALTER TABLE NashvilleHousing
 DROP COLUMN PropertyAddress,OwnerAddress,TaxDistrict
@@ -172,6 +213,10 @@ DROP COLUMN PropertyAddress,OwnerAddress,TaxDistrict
 ALTER TABLE NashvilleHousing
 DROP COLUMN SaleDate
 
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- Have a final look at the Cleaned Data
 
 SELECT * 
 FROM NashvilleHousing; 
